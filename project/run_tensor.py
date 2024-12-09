@@ -11,6 +11,66 @@ def RParam(*shape):
     r = 2 * (minitorch.rand(shape) - 0.5)
     return minitorch.Parameter(r)
 
+class Network(minitorch.Module):
+    def __init__(self, hidden_layers):
+        super().__init__()
+        self.layer1 = Linear(2, hidden_layers)
+        self.layer2 = Linear(hidden_layers, hidden_layers)
+        self.layer3 = Linear(hidden_layers, 1)
+
+    def forward(self, x) -> minitorch.Scalar:
+        """
+        Forward pass for the network
+
+        Args:
+        -----
+            x: Tuple of tensors
+
+        Returns:
+        -------
+            Tensor of forward pass shape
+        """
+        h = self.layer1.forward(x).relu()
+        h = self.layer2.forward(h).relu()
+        return self.layer3.forward(h).sigmoid()
+
+class Linear(minitorch.Module):
+    def __init__(self, in_size, out_size):
+        super().__init__()
+        self.weights = RParam(in_size, out_size)
+        self.bias = RParam(out_size)
+        self.out_size = out_size
+
+    def forward(self, inputs):
+        """Forward pass for the linear layer
+
+        Args:
+        -----
+            inputs: Tensor of inputs
+
+        Returns:
+        -------
+            Tensor output
+        """
+
+        # x - (batch, features, 1)
+        # * weights - (features, hidden)
+        #-------------
+        # (batch, features, hidden)
+        # reduce(features)
+        #-------------
+        # batch, 1, hidden
+        # + bias(hidden)
+        #-------------
+        # batch, 1, hidden
+        # view()
+        # batch, hidden
+        batch, in_size = inputs.shape
+        return (
+            self.weights.value.view(1, in_size, self.out_size)
+            * inputs.view(batch, in_size, 1)
+        ).sum(1).view(batch, self.out_size) + self.bias.value.view(self.out_size)
+
 
 def default_log_fn(epoch, total_loss, correct, losses):
     print("Epoch ", epoch, " loss ", total_loss, "correct", correct)

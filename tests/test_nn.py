@@ -32,7 +32,32 @@ def test_avg(t: Tensor) -> None:
 @given(tensors(shape=(2, 3, 4)))
 def test_max(t: Tensor) -> None:
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    print("original -------------", flush=True)
+    print(t, flush=True)
+    print("max -------------", flush=True)
+    print(t.max(0), flush=True)
+    out = t.max(0)
+    for j in range(t.shape[1]):
+        for k in range(t.shape[2]):
+            max_over = []
+            for i in range(t.shape[0]):
+                max_over.append(t[i, j, k])
+            assert_close(out[0, j, k], max(max_over))
+
+    t.requires_grad_(True)
+    out = t.max(0)
+    out.sum().backward()
+    # Check that gradient is 1.0 for maximum values and 0.0 otherwise
+    # We avoid using central difference because for max function:
+    # - When x is maximum: f(x + ε) = x + ε, f(x - ε) = other_max
+    # - This makes central diff always return 0.5 for maximum values
+    # - But true gradient should be 1.0 for maximum values    for j in range(t.shape[1]):
+    for j in range(t.shape[1]):
+        for k in range(t.shape[2]):
+            max_val = max(t[i, j, k] for i in range(t.shape[0]))
+            for i in range(t.shape[0]):
+                expected = 1.0 if t[i, j, k] == max_val else 0.0
+                assert_close(t.grad[i, j, k], expected)
 
 
 @pytest.mark.task4_4
