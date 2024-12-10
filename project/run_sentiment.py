@@ -35,8 +35,11 @@ class Conv1d(minitorch.Module):
 
     def forward(self, input):
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        # print("Conv1d weights (before):", self.weights.value)
 
+        convolved = minitorch.conv1d(input, self.weights.value)
+        # print("Conv1d weights (before):", self.weights.value)
+        return convolved + self.bias.value
 
 class CNNSentimentKim(minitorch.Module):
     """
@@ -62,14 +65,32 @@ class CNNSentimentKim(minitorch.Module):
         super().__init__()
         self.feature_map_size = feature_map_size
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        self.conv1 = Conv1d(embedding_size, feature_map_size, 3)
+        self.conv2 = Conv1d(embedding_size, feature_map_size, 4)
+        self.conv3 = Conv1d(embedding_size, feature_map_size, 5)
+        self.linear = Linear(feature_map_size, 1)
+        self.dropout_p = dropout
 
     def forward(self, embeddings):
         """
         embeddings tensor: [batch x sentence length x embedding dim]
         """
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        embeddings = embeddings.permute(0, 2, 1)
+        conv1_out = self.conv1(embeddings).relu()
+        conv2_out = self.conv2(embeddings).relu()
+        conv3_out = self.conv3(embeddings).relu()
+
+        pooled1 = conv1_out.max(dim=2)
+        pooled2 = conv2_out.max(dim=2)
+        pooled3 = conv3_out.max(dim=2)
+
+        combined = pooled1 + pooled2 + pooled3
+        combined = combined.view(embeddings.shape[0], self.feature_map_size)
+
+        linear = self.linear.forward(combined)
+        dropout = minitorch.dropout(linear, self.dropout_p, ignore=not self.training)
+        return dropout.sigmoid().view(embeddings.shape[0])
 
 
 # Evaluation helper methods
@@ -160,9 +181,14 @@ class SentenceSentimentTrain:
 
                 # Save train predictions
                 train_predictions += get_predictions_array(y, out)
+                # print(f'predictions: {[train_predictions[i][1] for i in range(len(train_predictions))]}')
                 total_loss += loss[0]
 
                 # Update
+                # print("conv1 weights grad:", model.conv1.weights.value.grad.sum())
+                # print("conv2 weights grad:", model.conv2.weights.value.grad.sum())
+                # print("conv3 weights grad:", model.conv3.weights.value.grad.sum())
+                # print("linear weights grad:", model.linear.weights.value.grad.sum())
                 optim.step()
 
             # Evaluate on validation set at the end of the epoch
@@ -256,7 +282,7 @@ if __name__ == "__main__":
     train_size = 450
     validation_size = 100
     learning_rate = 0.01
-    max_epochs = 250
+    max_epochs = 50
 
     (X_train, y_train), (X_val, y_val) = encode_sentiment_data(
         load_dataset("glue", "sst2"),
