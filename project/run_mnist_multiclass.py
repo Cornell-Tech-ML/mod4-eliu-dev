@@ -111,11 +111,11 @@ class LogWriter:
     def __init__(self, filename):
         self.filename = filename
         self.file = open(filename, 'a')
-    
+
     def write(self, message):
         self.file.write(message + '\n')
         self.file.flush()
-    
+
     def close(self):
         if self.file:
             self.file.close()
