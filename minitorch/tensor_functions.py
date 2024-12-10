@@ -541,12 +541,37 @@ class Permute(Function):
 class Max(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
+        """Max the tensor
+
+        Args:
+        ----
+            ctx: Context to store information during the forward pass
+            a: Tensor to max
+            dim: Dimension to max
+
+        Returns:
+        -------
+            Maxed tensor
+
+        """
         result = a.f.max_reduce(a, int(dim.item()))
         ctx.save_for_backward(a, dim, result)
         return result
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+        """Backward pass for the max function
+
+        Args:
+        ----
+            ctx: Context to store information during the forward pass
+            grad_output: Gradient to max
+
+        Returns:
+        -------
+            Maxed gradient
+
+        """
         a, dim, result = ctx.saved_values
 
         mask = a == result

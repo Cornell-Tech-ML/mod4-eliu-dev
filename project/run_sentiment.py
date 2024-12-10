@@ -80,7 +80,6 @@ class CNNSentimentKim(minitorch.Module):
         conv1_out = self.conv1(embeddings).relu()
         conv2_out = self.conv2(embeddings).relu()
         conv3_out = self.conv3(embeddings).relu()
-        # print(conv1_out.shape)
 
         pooled1 = conv1_out.max(dim=2)
         pooled2 = conv2_out.max(dim=2)
@@ -89,18 +88,9 @@ class CNNSentimentKim(minitorch.Module):
         combined = pooled1 + pooled2 + pooled3
         combined = combined.view(embeddings.shape[0], self.feature_map_size)
 
-        # Linear -> ReLU -> Dropout -> Sigmoid
-        # print('shapes')
-        # print('--------------')
-        # print(f'embeddings: {embeddings.shape}')
-        # print(f'conv1: {conv1_out.shape}')
-        # print(f'pooled1: {pooled1.shape}')
-        # print(f'combined: {combined.shape}')
-        # print('--------------')
-        linear = self.linear.forward(combined).relu()
+        linear = self.linear.forward(combined)
         dropout = minitorch.dropout(linear, self.dropout_p, ignore=not self.training)
-
-        return linear.sigmoid()
+        return dropout.sigmoid().view(embeddings.shape[0])
 
 
 # Evaluation helper methods
@@ -191,7 +181,7 @@ class SentenceSentimentTrain:
 
                 # Save train predictions
                 train_predictions += get_predictions_array(y, out)
-                print(f'predictions: {[train_predictions[i][1] for i in range(len(train_predictions))]}')
+                # print(f'predictions: {[train_predictions[i][1] for i in range(len(train_predictions))]}')
                 total_loss += loss[0]
 
                 # Update
@@ -200,7 +190,6 @@ class SentenceSentimentTrain:
                 # print("conv3 weights grad:", model.conv3.weights.value.grad.sum())
                 # print("linear weights grad:", model.linear.weights.value.grad.sum())
                 optim.step()
-                break
 
             # Evaluate on validation set at the end of the epoch
             validation_predictions = []
@@ -292,8 +281,8 @@ def encode_sentiment_data(dataset, pretrained_embeddings, N_train, N_val=0):
 if __name__ == "__main__":
     train_size = 450
     validation_size = 100
-    learning_rate = 0.1
-    max_epochs = 250
+    learning_rate = 0.01
+    max_epochs = 50
 
     (X_train, y_train), (X_val, y_val) = encode_sentiment_data(
         load_dataset("glue", "sst2"),

@@ -1,10 +1,7 @@
 from typing import Tuple
 
-from . import operators
-from .autodiff import Context
-from .fast_ops import FastOps
 from .tensor import Tensor
-from .tensor_functions import Function, rand, tensor
+from .tensor_functions import rand
 
 
 # List of functions in this file:
@@ -49,20 +46,69 @@ def tile(input: Tensor, kernel: Tuple[int, int]) -> Tuple[Tensor, int, int]:
 
 # TODO: Implement for Task 4.3.
 def avgpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
+    """Average pool a 2d tensor
+
+    Args:
+    ----
+        input: Tensor to average pool
+        kernel: Height x width of pooling
+
+    Returns:
+    -------
+        Averaged tensor
+
+    """
     tiled, new_height, new_width = tile(input, kernel)
     return tiled.mean(dim=4).view(input.shape[0], input.shape[1], new_height, new_width)
 
 
 def max(input: Tensor, dim: int) -> Tensor:
+    """Max the tensor
+
+    Args:
+    ----
+        input: Tensor to max
+        dim: Dimension to max over when reducing
+
+    Returns:
+    -------
+        Maxed tensor
+
+    """
     return input.max(dim)
 
 
 def maxpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
+    """Maxpool2d the tensor
+
+    Args:
+    ----
+        input: Tensor to maxpool2d
+        kernel: Height x width of pooling
+
+    Returns:
+    -------
+        Maxpooled tensor
+
+    """
     tiled, new_height, new_width = tile(input, kernel)
     return tiled.max(dim=4).view(input.shape[0], input.shape[1], new_height, new_width)
 
 
 def dropout(input: Tensor, p: float, ignore: bool = False) -> Tensor:
+    """Dropout the tensor
+
+    Args:
+    ----
+        input: Tensor to dropout
+        p: Probability of dropout
+        ignore: Whether to ignore dropout
+
+    Returns:
+    -------
+        Dropouted tensor
+
+    """
     if ignore:
         return input
     else:
@@ -71,6 +117,18 @@ def dropout(input: Tensor, p: float, ignore: bool = False) -> Tensor:
 
 
 def softmax(input: Tensor, dim: int = -1) -> Tensor:
+    """Softmax the tensor
+
+    Args:
+    ----
+        input: Tensor to softmax
+        dim: Dimension to softmax
+
+    Returns:
+    -------
+        Softmaxed tensor
+
+    """
     max_val = max(input, dim)
     stable_input = input - max_val
     exp_stable = stable_input.exp()
@@ -79,6 +137,18 @@ def softmax(input: Tensor, dim: int = -1) -> Tensor:
 
 
 def logsoftmax(input: Tensor, dim: int = -1) -> Tensor:
+    """Logsoftmax the tensor using log-sum-exp trick
+
+    Args:
+    ----
+        input: Tensor to logsoftmax
+        dim: Dimension to logsoftmax
+
+    Returns:
+    -------
+        Logsoftmaxed tensor
+
+    """
     # logsoftmax = x - log-sum-exp
     max_val = max(input, dim)
     stable_input = input - max_val
